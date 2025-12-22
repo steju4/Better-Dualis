@@ -47,11 +47,8 @@ def login():
 
             if not login_form:
                 print(f"Error: Could not find login form on start page. Status Code: {r_start.status_code}")
-                # Debug: Startseite speichern
-                with open('debug_start_page.html', 'w', encoding='utf-8') as f:
-                    f.write(r_start.text)
                 
-                flash('Verbindungsfehler: Login-Formular nicht gefunden (siehe Terminal/Debug-File).')
+                flash('Verbindungsfehler: Login-Formular nicht gefunden.')
                 return render_template('login.html')
 
             # Payload dynamisch aufbauen
@@ -140,9 +137,6 @@ def login():
             # Wir prüfen zuerst, ob wir wieder auf der Login-Seite gelandet sind
             if 'name="usrname"' in r.text or 'Anmeldung' in r.text:
                 print("Login failed: Login form detected in response.")
-                # Debug: Response speichern
-                with open('login_response_debug.html', 'w', encoding='utf-8') as f:
-                    f.write(r.text)
                 flash('Login fehlgeschlagen. Benutzername oder Passwort falsch.')
                 return render_template('login.html')
 
@@ -169,9 +163,6 @@ def login():
                 return redirect(url_for('dashboard'))
             else:
                 print("Login failed: No valid session ID found.")
-                # Debug: Response speichern (als Bytes, um Encoding-Fehler zu vermeiden)
-                with open('login_response_debug.html', 'wb') as f:
-                    f.write(r.content)
                 flash('Login fehlgeschlagen. Unbekannter Fehler (siehe Terminal).')
                 return render_template('login.html')
                 
@@ -524,10 +515,6 @@ def details():
         
         # Cookies aktualisieren
         session['dualis_cookies'] = s.cookies.get_dict()
-        
-        # DEBUG: Save HTML
-        with open('details_debug.html', 'w', encoding='utf-8') as f:
-            f.write(r.text)
             
         soup = BeautifulSoup(r.content, 'html.parser')
         
