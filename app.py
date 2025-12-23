@@ -21,6 +21,7 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+        print(f"DEBUG: Password entered: {password}")
 
         # 1. Login Request an Dualis senden
         s = requests.Session()
@@ -46,8 +47,6 @@ def login():
                          login_form = soup_start.find('form', {'id': 'cn_loginForm'})
 
             if not login_form:
-                print(f"Error: Could not find login form on start page. Status Code: {r_start.status_code}")
-                
                 flash('Verbindungsfehler: Login-Formular nicht gefunden.')
                 return render_template('login.html')
 
@@ -74,14 +73,7 @@ def login():
             post_headers = HEADERS.copy()
             post_headers['Referer'] = start_url
 
-            print(f"Sending login POST to {post_url}")
-            # print(f"Payload: {payload}") # Debug (Passwort nicht loggen!)
-
             r = s.post(post_url, data=payload, headers=post_headers)
-            
-            # Debug: URL nach Login
-            print(f"URL after login: {r.url}")
-            print("Response Headers:", r.headers)
             
             # 2. Prüfen ob Login erfolgreich
             
@@ -91,7 +83,6 @@ def login():
             # Check for HTTP Refresh Header (nicht im HTML, sondern im HTTP-Header)
             if 'Refresh' in r.headers:
                 refresh_header = r.headers['Refresh']
-                print(f"Found Refresh Header: {refresh_header}")
                 # Format oft: "0; url=..."
                 # Case-insensitive split
                 match = re.search(r'url=([^;]+)', refresh_header, re.IGNORECASE)
@@ -100,7 +91,6 @@ def login():
                     if redirect_url.startswith('/'):
                         redirect_url = "https://dualis.dhbw.de" + redirect_url
                     
-                    print(f"Following Refresh Header to: {redirect_url}")
                     r = s.get(redirect_url, headers=HEADERS)
                     soup_response = BeautifulSoup(r.text, 'html.parser')
 
@@ -116,7 +106,6 @@ def login():
                     if redirect_url.startswith('/'):
                         redirect_url = "https://dualis.dhbw.de" + redirect_url
                     
-                    print(f"Following Meta Refresh to: {redirect_url}")
                     r = s.get(redirect_url, headers=HEADERS)
                     soup_response = BeautifulSoup(r.text, 'html.parser') # Update soup
 
@@ -130,13 +119,11 @@ def login():
                         redirect_url = match.group(1)
                         if redirect_url.startswith('/'):
                             redirect_url = "https://dualis.dhbw.de" + redirect_url
-                        print(f"Following JS Redirect to: {redirect_url}")
                         r = s.get(redirect_url, headers=HEADERS)
                         break
 
             # Wir prüfen zuerst, ob wir wieder auf der Login-Seite gelandet sind
             if 'name="usrname"' in r.text or 'Anmeldung' in r.text:
-                print("Login failed: Login form detected in response.")
                 flash('Login fehlgeschlagen. Benutzername oder Passwort falsch.')
                 return render_template('login.html')
 
@@ -157,13 +144,12 @@ def login():
                      session_id = match.group(1)
 
             if session_id:
-                print(f"Login successful. Session ID: {session_id}")
+                print(f"DEBUG: Session ID found: {session_id}")
                 session['dualis_id'] = session_id
                 session['dualis_cookies'] = s.cookies.get_dict() # Cookies speichern!
                 return redirect(url_for('dashboard'))
             else:
-                print("Login failed: No valid session ID found.")
-                flash('Login fehlgeschlagen. Unbekannter Fehler (siehe Terminal).')
+                flash('Login fehlgeschlagen. Unbekannter Fehler.')
                 return render_template('login.html')
                 
         except Exception as e:
@@ -208,10 +194,8 @@ def dashboard():
             grades_url = "https://dualis.dhbw.de" + a_tag['href']
             
     if grades_url:
-        print(f"Fetching grades from: {grades_url}")
         r = s.get(grades_url, headers=HEADERS)
     else:
-        print("Warning: Could not find grades link dynamically. Using fallback.")
         # Fallback: URL zusammenbauen (wie bisher, aber mit Risiko)
         args = f"-N{session_id},-N000310,-N0,-N000000000000000,-N000000000000000,-N000000000000000,-N0,-N000000000000000"
         params = {
@@ -372,12 +356,10 @@ def exams():
         # createUrlAndReload('/scripts/mgrqispi.dll','CampusNet','COURSERESULTS','470705467050617','000307','-N'+this.value)
         target_url = f"https://dualis.dhbw.de/scripts/mgrqispi.dll?APPNAME=CampusNet&PRGNAME=COURSERESULTS&ARGUMENTS=-N{session_id},-N000307,-N{semester_arg}"
 
-    print(f"Fetching exams from: {target_url}")
     r = s.get(target_url, headers=HEADERS)
     
     # Update URL to the actual one (in case of redirects or if we constructed it slightly differently)
     final_url = r.url
-    print(f"Final Exams URL: {final_url}")
 
     soup = BeautifulSoup(r.content, 'html.parser')
 
@@ -489,12 +471,9 @@ def details():
         s.cookies.update(session['dualis_cookies'])
     
     full_url = "https://dualis.dhbw.de" + relative_url
-    print(f"Fetching details from: {full_url}")
     
     # Check Session ID match
     session_id = session.get('dualis_id', '')
-    if f"-N{session_id}" not in full_url:
-        print(f"WARNING: Session ID mismatch! Session: {session_id} not in URL.")
     
     # Referer Header setzen
     referer_arg = request.args.get('referer')
@@ -503,9 +482,6 @@ def details():
         referer_url = html.unescape(referer_url) # Auch hier sicherstellen
     else:
         referer_url = f"https://dualis.dhbw.de/scripts/mgrqispi.dll?APPNAME=CampusNet&PRGNAME=COURSERESULTS&ARGUMENTS=-N{session_id},-N000307,"
-    
-    print(f"Using Referer: {referer_url}")
-    print(f"Cookies: {s.cookies.get_dict()}")
     
     headers = HEADERS.copy()
     headers['Referer'] = referer_url
@@ -600,7 +576,7 @@ def details():
         return render_template('details.html', title=title, details=details, semester=semester_val)
 
     except Exception as e:
-        print(f"Error fetching details: {e}")
+        pass
         import traceback
         traceback.print_exc()
         flash('Fehler beim Laden der Details.')
