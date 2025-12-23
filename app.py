@@ -21,7 +21,6 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        print(f"DEBUG: Password entered: {password}")
 
         # 1. Login Request an Dualis senden
         s = requests.Session()
@@ -144,7 +143,6 @@ def login():
                      session_id = match.group(1)
 
             if session_id:
-                print(f"DEBUG: Session ID found: {session_id}")
                 session['dualis_id'] = session_id
                 session['dualis_cookies'] = s.cookies.get_dict() # Cookies speichern!
                 return redirect(url_for('dashboard'))
