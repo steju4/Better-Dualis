@@ -4,7 +4,7 @@
 
 Dieses Projekt ist eine moderne, mobile-optimierte Benutzeroberfläche für das **Dualis Prüfungsportal** der DHBW.
 
-Das offizielle Dualis-Portal ist auf Smartphones oft schwer zu bedienen (kleine Tabellen, kein Responsive Design). Diese App löst das Problem, indem sie die Daten aus Dualis ausliest und in einem sauberen, App-ähnlichen Design darstellt.
+Das offizielle Dualis-Portal ist auf Smartphones oft schwer zu bedienen, da es keine mobile Version gibt und das Design nicht responsive ist (kleine Tabellen, kein Responsive Design). Diese App löst das Problem, indem sie die Daten aus Dualis ausliest und in einem sauberen, App-ähnlichen Design darstellt.
 
 ## Wie es funktioniert
 
